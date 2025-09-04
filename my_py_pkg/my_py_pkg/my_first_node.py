@@ -3,11 +3,16 @@ import rclpy
 from rclpy.node import Node
 
 
+class MyFirstNode(Node):
+    def __init__(self):
+        super().__init__("my_first_node")
+        self.get_logger().info("Hello ROS2")
+
+
 def main(args=None):
     rclpy.init(args=args)
 
-    node = Node("my_first_node")
-    node.get_logger().info("Hello ROS2")
+    node = MyFirstNode()
     rclpy.spin(node)
 
     rclpy.shutdown()
