@@ -8,8 +8,8 @@
       "args": [],
       "stopAtEntry": false,
       "externalConsole": false,
-      "cwd": "/home/marchioro/source/ros-course/ros2_ws/src/my_cpp_pkg/src",
-      "program": "/home/marchioro/source/ros-course/ros2_ws/src/my_cpp_pkg/src/build/Debug/outDebug",
+      "cwd": "/home/marchioro/source/ros2_ws/src/my_cpp_pkg/src",
+      "program": "/home/marchioro/source/ros2_ws/src/my_cpp_pkg/src/build/Debug/outDebug",
       "MIMode": "gdb",
       "miDebuggerPath": "gdb",
       "setupCommands": [
