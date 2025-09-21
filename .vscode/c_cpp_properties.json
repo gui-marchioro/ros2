@@ -18,6 +18,7 @@
             "name": "ROS",
             "includePath": [
                 "${workspaceFolder}/**",
+                "/home/marchioro/source/ros2_ws/install/my_robot_interfaces/include/**",
                 "/opt/ros/jazzy/include/**"
             ],
             "defines": [],
