@@ -19,10 +19,10 @@ ament_target_dependencies(robot_news_station rclcpp example_interfaces)
 add_executable(smartphone src/smartphone.cpp)
 ament_target_dependencies(smartphone rclcpp example_interfaces)
 
-add_executable(number_publisher src/activity_02/number_publisher.cpp)
+add_executable(number_publisher src/activity_02_03/number_publisher.cpp)
 ament_target_dependencies(number_publisher rclcpp example_interfaces)
 
-add_executable(number_counter src/activity_02/number_counter.cpp)
+add_executable(number_counter src/activity_02_03/number_counter.cpp)
 ament_target_dependencies(number_counter rclcpp example_interfaces)
 
 add_executable(add_two_ints_server src/add_two_ints_server.cpp)
