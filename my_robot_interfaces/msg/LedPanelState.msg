@@ -1,0 +1,1 @@
+uint8[3] led_panel_state
