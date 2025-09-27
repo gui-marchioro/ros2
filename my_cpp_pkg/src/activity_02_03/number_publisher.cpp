@@ -6,9 +6,12 @@ class NumberPublisherNode : public rclcpp::Node
 public:
     NumberPublisherNode() : Node("number_publisher")
     {
-        m_number = 5;
+        this->declare_parameter("number", 2);
+        this->declare_parameter("time_period", 1.0);
+        m_number = this->get_parameter("number").as_int();
+        double time_period = this->get_parameter("time_period").as_double();
         m_publisher = this->create_publisher<example_interfaces::msg::Int64>("number", 10);
-        m_timer = this->create_wall_timer(std::chrono::seconds(1), std::bind(&NumberPublisherNode::publish_number, this));
+        m_timer = this->create_wall_timer(std::chrono::duration<double>(time_period), std::bind(&NumberPublisherNode::publish_number, this));
         RCLCPP_INFO(this->get_logger(), "Number Publisher has been started");
     }
 
