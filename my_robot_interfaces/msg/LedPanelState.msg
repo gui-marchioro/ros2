@@ -1,1 +1,1 @@
-uint8[3] led_panel_state
+int64[] led_panel_state

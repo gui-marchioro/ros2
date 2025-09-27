@@ -6,7 +6,8 @@ class RobotNewsStationNode : public rclcpp::Node
 public:
     RobotNewsStationNode() : Node("robot_news")
     {
-        m_robot_name = "C3PO";
+        this->declare_parameter("robot_name", "C3PO");
+        m_robot_name = this->get_parameter("robot_name").as_string();
         m_publisher = this->create_publisher<example_interfaces::msg::String>("robot_news", 10);
         m_timer = this->create_wall_timer(std::chrono::seconds(1), std::bind(&RobotNewsStationNode::publish_news, this));
         RCLCPP_INFO(this->get_logger(), "Robot News Station has been started");
