@@ -13,6 +13,7 @@ def generate_launch_description():
         package="my_py_pkg",
         executable="number_publisher",
         name="my_number_publisher",
+        namespace="/abc",
         remappings=[("number", "my_number")],
         # parameters=[
         #     {"number": 12},
@@ -25,6 +26,7 @@ def generate_launch_description():
         package="my_cpp_pkg",
         executable="number_counter",
         name="my_number_counter",
+        namespace="/abc",
         remappings=[("number", "my_number")]
     )
 
