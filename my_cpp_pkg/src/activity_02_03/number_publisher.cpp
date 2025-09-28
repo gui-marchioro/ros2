@@ -11,15 +11,24 @@ public:
         m_number = this->get_parameter("number").as_int();
         double time_period = this->get_parameter("time_period").as_double();
         m_publisher = this->create_publisher<example_interfaces::msg::Int64>("number", 10);
-        m_timer = this->create_wall_timer(std::chrono::duration<double>(time_period), std::bind(&NumberPublisherNode::publish_number, this));
+        m_timer = this->create_wall_timer(
+            std::chrono::duration<double>(time_period),
+            std::bind(&NumberPublisherNode::publish_number, this)
+        );
+
+        parameter_callback_handle_ =
+            this->add_post_set_parameters_callback(
+                std::bind(&NumberPublisherNode::parameter_callback, this, std::placeholders::_1)
+            );
+
         RCLCPP_INFO(this->get_logger(), "Number Publisher has been started");
-        this->add_post_set_parameters_callback(std::bind(&NumberPublisherNode::parameter_callback, this, std::placeholders::_1));
     }
 
 private:
     int64_t m_number;
     rclcpp::Publisher<example_interfaces::msg::Int64>::SharedPtr m_publisher;
     rclcpp::TimerBase::SharedPtr m_timer;
+    rclcpp::node_interfaces::PostSetParametersCallbackHandle::SharedPtr parameter_callback_handle_;
 
     void publish_number()
     {
@@ -35,13 +44,16 @@ private:
             if (parameter.get_name() == "number")
             {
                 m_number = parameter.as_int();
-                RCLCPP_INFO(this->get_logger(), "Number parameter changed to: %d", m_number);
+                RCLCPP_INFO(this->get_logger(), "Number parameter changed to: %ld", m_number);
             }
             else if (parameter.get_name() == "time_period")
             {
                 double time_period = parameter.as_double();
                 m_timer->cancel();
-                m_timer = this->create_wall_timer(std::chrono::duration<double>(time_period), std::bind(&NumberPublisherNode::publish_number, this));
+                m_timer = this->create_wall_timer(
+                    std::chrono::duration<double>(time_period),
+                    std::bind(&NumberPublisherNode::publish_number, this)
+                );
                 RCLCPP_INFO(this->get_logger(), "Time period parameter changed to: %f seconds", time_period);
             }
         }
