@@ -1,6 +1,8 @@
 <launch>
     <node pkg="my_py_pkg" exec="number_publisher" name="my_number_publisher">
         <remap from="number" to="my_number"/>
+        <param name="number" value="6" />
+        <param name="timer_period" value="1.5" />
     </node>
     <node pkg="my_cpp_pkg" exec="number_counter" name="my_number_counter">
         <remap from="number" to="my_number"/>
