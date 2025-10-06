@@ -1,5 +1,9 @@
 #include "rclcpp/rclcpp.hpp"
 #include "turtlesim/srv/spawn.hpp"
+#include "turtlesim_catch_them_all/msg/turtle.hpp"
+#include "turtlesim_catch_them_all/msg/turtle_array.hpp"
+
+using namespace turtlesim_catch_them_all::msg;
 
 class TurtleSpawnerNode : public rclcpp::Node
 {
@@ -9,8 +13,8 @@ public:
         RCLCPP_INFO(this->get_logger(), "TurtleSpawnerNode has been started");
         m_client = this->create_client<turtlesim::srv::Spawn>("spawn");
         m_base_turtle_name = "spawned_turtle";
-        spawn_new_turtle();
         m_timer = this->create_wall_timer(std::chrono::seconds(2), std::bind(&TurtleSpawnerNode::spawn_new_turtle, this));
+        m_publisher = this->create_publisher<TurtleArray>("alive_turtles", 10);
     }
 
 private:
@@ -18,15 +22,19 @@ private:
     std::string m_base_turtle_name;
     std::uint16_t m_spawner_counter = 0;
     rclcpp::TimerBase::SharedPtr m_timer;
+    std::vector<Turtle> m_spawned_turtles;
+    rclcpp::Publisher<TurtleArray>::SharedPtr m_publisher;
 
     void spawn_new_turtle()
     {
         m_spawner_counter++;
         std::string turtle_name = m_base_turtle_name + std::to_string(m_spawner_counter);
-        spawn_turtle(turtle_name);
+        auto turtle = spawn_turtle(turtle_name);
+        m_spawned_turtles.push_back(turtle);
+        publish_alive_turtles();
     }
 
-    void spawn_turtle(const std::string &name)
+    Turtle spawn_turtle(const std::string &name)
     {
         RCLCPP_INFO(this->get_logger(), "Spawning turtle: %s", name.c_str());
         float x = get_random_position();
@@ -42,9 +50,14 @@ private:
         request->x = x;
         request->y = y;
         request->theta = theta;
+        auto turtle = Turtle();
+        turtle.name = name;
+        turtle.x = x;
+        turtle.y = y;
 
         m_client->async_send_request(request,
              std::bind(&TurtleSpawnerNode::spawn_response, this, std::placeholders::_1));
+        return turtle;
     }
 
     float get_random_position()
@@ -64,6 +77,13 @@ private:
     void spawn_response(rclcpp::Client<turtlesim::srv::Spawn>::SharedFuture future)
     {
         RCLCPP_INFO(this->get_logger(), "Spawned turtle: %s", future.get()->name.c_str());
+    }
+
+    void publish_alive_turtles()
+    {
+        TurtleArray msg;
+        msg.turtles = m_spawned_turtles;
+        m_publisher->publish(msg);
     }
 };
 

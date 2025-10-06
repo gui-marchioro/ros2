@@ -19,6 +19,7 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "/home/marchioro/source/ros2_ws/install/my_robot_interfaces/include/**",
+                "/home/marchioro/source/ros2_ws/install/turtlesim_catch_them_all/include/**",
                 "/opt/ros/jazzy/include/**"
             ],
             "defines": [],

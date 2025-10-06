@@ -1,11 +1,13 @@
 {
   "python.autoComplete.extraPaths": [
     "/opt/ros/jazzy/lib/python3.12/site-packages",
-    "/home/marchioro/source/ros2_ws/install/my_robot_interfaces/lib/python3.12/site-packages"
+    "/home/marchioro/source/ros2_ws/install/my_robot_interfaces/lib/python3.12/site-packages",
+    "/home/marchioro/source/ros2_ws/install/turtlesim_catch_them_all/lib/python3.12/site-packages"
   ],
   "python.analysis.extraPaths": [
     "/opt/ros/jazzy/lib/python3.12/site-packages",
-    "/home/marchioro/source/ros2_ws/install/my_robot_interfaces/lib/python3.12/site-packages"
+    "/home/marchioro/source/ros2_ws/install/my_robot_interfaces/lib/python3.12/site-packages",
+    "/home/marchioro/source/ros2_ws/install/turtlesim_catch_them_all/lib/python3.12/site-packages"
   ],
   "ros.distro": "jazzy",
   "C_Cpp_Runner.msvcBatchPath": "",
