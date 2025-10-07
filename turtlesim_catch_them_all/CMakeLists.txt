@@ -9,15 +9,17 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(turtlesim REQUIRED)
+find_package(geometry_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Turtle.msg"
   "msg/TurtleArray.msg"
+  DEPENDENCIES service_msgs
 )
 
 add_executable(turtle_controller src/turtle_controller.cpp)
-ament_target_dependencies(turtle_controller rclcpp)
+ament_target_dependencies(turtle_controller rclcpp turtlesim geometry_msgs)
 target_link_libraries(turtle_controller ${PROJECT_NAME}__rosidl_typesupport_cpp)
 
 add_executable(turtle_spawner src/turtle_spawner.cpp)
