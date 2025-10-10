@@ -15,10 +15,13 @@ public:
     TurtleSpawnerNode() : Node("turtle_spawner")
     {
         RCLCPP_INFO(this->get_logger(), "TurtleSpawnerNode has been started");
+        this->declare_parameter("turtle_name_prefix", "spawned_turtle");
+        m_base_turtle_name = this->get_parameter("turtle_name_prefix").as_string();
+        this->declare_parameter("spawn_frequency", 5);
+        m_spawn_frequency = this->get_parameter("spawn_frequency").as_int();
         m_client_spawn = this->create_client<turtlesim::srv::Spawn>("spawn");
         m_client_kill = this->create_client<turtlesim::srv::Kill>("kill");
-        m_base_turtle_name = "spawned_turtle";
-        m_timer = this->create_wall_timer(std::chrono::seconds(5), std::bind(&TurtleSpawnerNode::spawn_new_turtle, this));
+        m_timer = this->create_wall_timer(std::chrono::seconds(m_spawn_frequency), std::bind(&TurtleSpawnerNode::spawn_new_turtle, this));
         m_publisher = this->create_publisher<TurtleArray>("alive_turtles", 10);
         m_service = this->create_service<CatchTurtle>(
             "catch_turtle",
@@ -30,6 +33,7 @@ private:
     rclcpp::Client<turtlesim::srv::Spawn>::SharedPtr m_client_spawn;
     rclcpp::Client<turtlesim::srv::Kill>::SharedPtr m_client_kill;
     std::string m_base_turtle_name;
+    std::uint32_t m_spawn_frequency;
     std::uint16_t m_spawner_counter = 0;
     rclcpp::TimerBase::SharedPtr m_timer;
     std::vector<Turtle> m_spawned_turtles;

@@ -1,5 +1,10 @@
 <launch>
     <node pkg="turtlesim" exec="turtlesim_node"/>
-    <node pkg="turtlesim_catch_them_all" exec="turtle_spawner"/>
-    <node pkg="turtlesim_catch_them_all" exec="turtle_controller"/>
+    <node pkg="turtlesim_catch_them_all" exec="turtle_spawner">
+        <param name="turtle_name_prefix" value="turtoise"/>
+        <param name="spawn_frequency" value="3"/>
+    </node>
+    <node pkg="turtlesim_catch_them_all" exec="turtle_controller">
+        <param name="catch_closest_turtle_first" value="true"/>
+    </node>
 </launch>
