@@ -2,6 +2,7 @@
 #include "turtlesim/msg/pose.hpp"
 #include "turtlesim_catch_them_all/msg/turtle.hpp"
 #include "turtlesim_catch_them_all/msg/turtle_array.hpp"
+#include "turtlesim_catch_them_all/srv/catch_turtle.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 
 class TurtleControllerNode : public rclcpp::Node
@@ -14,8 +15,9 @@ public:
             "turtle1/pose", 10, std::bind(&TurtleControllerNode::CallbackPose, this, std::placeholders::_1));
         m_subscription_turtles = this->create_subscription<turtlesim_catch_them_all::msg::TurtleArray>(
             "alive_turtles", 10, std::bind(&TurtleControllerNode::CallbackAliveTurtles, this, std::placeholders::_1));
-        m_timer = this->create_wall_timer(std::chrono::milliseconds(100), std::bind(&TurtleControllerNode::MoveTowardsTarget, this));
+        m_timer = this->create_wall_timer(std::chrono::milliseconds(200), std::bind(&TurtleControllerNode::MoveTowardsTarget, this));
         m_publisher = this->create_publisher<geometry_msgs::msg::Twist>("turtle1/cmd_vel", 10);
+        m_client = this->create_client<turtlesim_catch_them_all::srv::CatchTurtle>("catch_turtle");
     }
 
 private:
@@ -26,6 +28,7 @@ private:
     turtlesim::msg::Pose target_pose;
     std::vector<turtlesim_catch_them_all::msg::Turtle> alive_turtles;
     rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr m_publisher;
+    rclcpp::Client<turtlesim_catch_them_all::srv::CatchTurtle>::SharedPtr m_client;
 
     void CallbackPose(const turtlesim::msg::Pose::SharedPtr msg)
     {
@@ -59,22 +62,40 @@ private:
         }
 
         auto message = geometry_msgs::msg::Twist();
-
-        double angle_to_target = atan2(target_pose.y - current_pose.y, target_pose.x - current_pose.x);
+        RCLCPP_DEBUG(this->get_logger(), "Current position (%.2f, %.2f)", current_pose.x, current_pose.y);
+        double angle_to_target = atan2(target_pose.y - current_pose.y, target_pose.x - current_pose.x) - current_pose.theta;
+        if (angle_to_target > M_PI) angle_to_target -= 2 * M_PI;
+        if (angle_to_target < -M_PI) angle_to_target += 2 * M_PI;
         double distance_to_target = sqrt(pow(target_pose.x - current_pose.x, 2) + pow(target_pose.y - current_pose.y, 2));
-
+        RCLCPP_DEBUG(this->get_logger(), "Distance to target: %.2f, Angle to target: %.2f", distance_to_target, angle_to_target);
         if (distance_to_target > 0.1) { // Threshold to consider "reached"
-            message.linear.x = std::min(1.0, distance_to_target); // Cap speed to 1.0
-            message.angular.z = angle_to_target - current_pose.theta;
+            if (distance_to_target < 0.5) {
+                distance_to_target = 0.5;
+            }
+            message.linear.x = std::min(1.5, distance_to_target); // Cap speed
+            message.angular.z = angle_to_target;
         } else {
             message.linear.x = 0.0;
             message.angular.z = 0.0;
             RCLCPP_INFO(this->get_logger(), "Reached target turtle at (%.2f, %.2f)", target_pose.x, target_pose.y);
             target_pose.x = 0; // Reset target
             target_pose.y = 0;
+            while (!m_client->wait_for_service(std::chrono::seconds(1))) {
+                RCLCPP_WARN(this->get_logger(), "Service not available, waiting again...");
+            }
+            auto request = std::make_shared<turtlesim_catch_them_all::srv::CatchTurtle::Request>();
+            request->name = alive_turtles[0].name; // Assuming we are catching the first turtle
+            m_client->async_send_request(request,
+                std::bind(&TurtleControllerNode::CaughtResponse, this, std::placeholders::_1));
         }
-
+        RCLCPP_DEBUG(this->get_logger(), "Publishing cmd_vel - linear.x: %.2f, angular.z: %.2f",
+                    message.linear.x, message.angular.z);
         m_publisher->publish(message);
+    }
+
+    void CaughtResponse(rclcpp::Client<turtlesim_catch_them_all::srv::CatchTurtle>::SharedFuture future)
+    {
+        RCLCPP_INFO(this->get_logger(), "Caught turtle: %s", future.get()->success ? "Success" : "Failure");
     }
 };
 

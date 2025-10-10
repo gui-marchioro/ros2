@@ -1,9 +1,13 @@
 #include "rclcpp/rclcpp.hpp"
 #include "turtlesim/srv/spawn.hpp"
+#include "turtlesim/srv/kill.hpp"
 #include "turtlesim_catch_them_all/msg/turtle.hpp"
 #include "turtlesim_catch_them_all/msg/turtle_array.hpp"
+#include "turtlesim_catch_them_all/srv/catch_turtle.hpp"
 
+using namespace std::placeholders;
 using namespace turtlesim_catch_them_all::msg;
+using namespace turtlesim_catch_them_all::srv;
 
 class TurtleSpawnerNode : public rclcpp::Node
 {
@@ -11,19 +15,26 @@ public:
     TurtleSpawnerNode() : Node("turtle_spawner")
     {
         RCLCPP_INFO(this->get_logger(), "TurtleSpawnerNode has been started");
-        m_client = this->create_client<turtlesim::srv::Spawn>("spawn");
+        m_client_spawn = this->create_client<turtlesim::srv::Spawn>("spawn");
+        m_client_kill = this->create_client<turtlesim::srv::Kill>("kill");
         m_base_turtle_name = "spawned_turtle";
-        m_timer = this->create_wall_timer(std::chrono::seconds(2), std::bind(&TurtleSpawnerNode::spawn_new_turtle, this));
+        m_timer = this->create_wall_timer(std::chrono::seconds(5), std::bind(&TurtleSpawnerNode::spawn_new_turtle, this));
         m_publisher = this->create_publisher<TurtleArray>("alive_turtles", 10);
+        m_service = this->create_service<CatchTurtle>(
+            "catch_turtle",
+            std::bind(&TurtleSpawnerNode::catch_turtle, this, _1, _2));
+        spawn_new_turtle();
     }
 
 private:
-    rclcpp::Client<turtlesim::srv::Spawn>::SharedPtr m_client;
+    rclcpp::Client<turtlesim::srv::Spawn>::SharedPtr m_client_spawn;
+    rclcpp::Client<turtlesim::srv::Kill>::SharedPtr m_client_kill;
     std::string m_base_turtle_name;
     std::uint16_t m_spawner_counter = 0;
     rclcpp::TimerBase::SharedPtr m_timer;
     std::vector<Turtle> m_spawned_turtles;
     rclcpp::Publisher<TurtleArray>::SharedPtr m_publisher;
+    rclcpp::Service<CatchTurtle>::SharedPtr m_service;
 
     void spawn_new_turtle()
     {
@@ -41,7 +52,7 @@ private:
         float y = get_random_position();
         float theta = get_random_rotation();
 
-        while (!m_client->wait_for_service(std::chrono::seconds(1))) {
+        while (!m_client_spawn->wait_for_service(std::chrono::seconds(1))) {
             RCLCPP_WARN(this->get_logger(), "Service not available, waiting again...");
         }
 
@@ -55,7 +66,7 @@ private:
         turtle.x = x;
         turtle.y = y;
 
-        m_client->async_send_request(request,
+        m_client_spawn->async_send_request(request,
              std::bind(&TurtleSpawnerNode::spawn_response, this, std::placeholders::_1));
         return turtle;
     }
@@ -84,6 +95,34 @@ private:
         TurtleArray msg;
         msg.turtles = m_spawned_turtles;
         m_publisher->publish(msg);
+    }
+
+    void catch_turtle(
+        const std::shared_ptr<CatchTurtle::Request> request,
+        std::shared_ptr<CatchTurtle::Response> response)
+    {
+        while (!m_client_kill->wait_for_service(std::chrono::seconds(1))) {
+            RCLCPP_WARN(this->get_logger(), "Service not available, waiting again...");
+        }
+        auto kill_request = std::make_shared<turtlesim::srv::Kill::Request>();
+        kill_request->name = request->name;
+        
+        m_client_kill->async_send_request(kill_request,
+             std::bind(&TurtleSpawnerNode::kill_response, this, _1));
+        RCLCPP_INFO(this->get_logger(), "Catching turtle: %s", request->name.c_str());
+        response->success = true;
+        for (auto it = m_spawned_turtles.begin(); it != m_spawned_turtles.end(); ++it) {
+            if (it->name == request->name) {
+                m_spawned_turtles.erase(it);
+                break;
+            }
+        }
+        publish_alive_turtles();
+    }
+
+    void kill_response(rclcpp::Client<turtlesim::srv::Kill>::SharedFuture future)
+    {
+        RCLCPP_INFO(this->get_logger(), "Turtle killed");
     }
 };
 
